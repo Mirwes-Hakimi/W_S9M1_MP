@@ -3,7 +3,7 @@ import React from 'react'
 import { render, waitFor, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
-import server from '../../backend/mock-server'
+import server, { use } from '../../backend/mock-server'
 import Auth from './Auth'
 
 describe('Auth component', () => {
@@ -54,25 +54,40 @@ describe('Auth component', () => {
     await user.type(passInput, '12345')
     // ✨ click the Login button
     await user.click(loginBtn)
-    screen.debug()
+   
     // ✨ assert that the "Please wait..." message is visible in the DOM
+    expect(screen.getByText('Please wait...')).toBeVisible();
     // expect(true).toBe(false) // DELETE
   })
   test('[3] Submitting form typing [ENTER] shows "Please wait..." message', async () => {
     // ✨ type whatever values in username and password inputs
+    await user.type(userInput, 'gabe')
+    await user.type(passInput, '12345')
     // ✨ hit the [ENTER] key on the keyboard
+    await user.keyboard('[ENTER]')
     // ✨ assert that the "Please wait..." message is visible in the DOM
-    expect(true).toBe(false) // DELETE
+    expect(screen.getByText('Please wait...')).toBeVisible();
+    // expect(true).toBe(false) // DELETE
+    
   })
   test('[4] Submitting an empty form shows "Invalid Credentials" message', async () => {
     // ✨ submit an empty form
+    await user.click(loginBtn)
+    
     // ✨ assert that the "Invalid Credentials" message eventually is visible
-    expect(true).toBe(false) // DELETE
+    expect(await screen.findByText("Invalid Credentials")).toBeVisible();
+    // expect(true).toBe(false) // DELETE
+  
   })
   test('[5] Submitting incorrect credentials shows "Invalid Credentials" message', async () => {
     // ✨ type whatever username and password and submit form
+    await user.type(userInput, 'gabe')
+    await user.type(passInput, '12345')
+    await user.click(loginBtn);
     // ✨ assert that the "Invalid Credentials" message eventually is visible
-    expect(true).toBe(false) // DELETE
+    expect(await screen.findByText("Invalid Credentials")).toBeVisible();
+    // expect(true).toBe(false) // DELETE
+    
   })
   for (const usr of registeredUsers) {
     test(`[6.${usr.id}] Logging in ${usr.username} makes the following elements render:
@@ -80,18 +95,34 @@ describe('Auth component', () => {
         - correct user info (ID, username, birth date)
         - logout button`, async () => {
       // ✨ type valid credentials and submit form
-      // ✨ assert that the correct welcome message is eventually visible
+      await user.type(userInput, usr.username)
+      await user.type(passInput, usr.password)
+      await user.click(loginBtn)
+      await waitFor(() => {
+          // ✨ assert that the correct welcome message is eventually visible
       // ✨ assert that the correct user info appears is eventually visible
       // ✨ assert that the logout button appears
-      expect(true).toBe(false) // DELETE
+      expect(screen.getByText(`Welcome back, ${usr.username}. We LOVE you!`)).toBeVisible()
+      expect(screen.getByText(`ID: ${usr.id}, Username: ${usr.username}, Born: ${usr.born}`)).toBeVisible()
+      expect(screen.getByText('Logout')).toBeVisible()
+      })
+   
     })
   }
   test('[7] Logging out a logged-in user displays goodbye message and renders form', async () => {
     // ✨ type valid credentials and submit
+    const { username, password } = registeredUsers[0]
+    await user.type(userInput, username)
+    await user.type(passInput, password)
+    await user.click(loginBtn)
     // ✨ await the welcome message
+    await screen.findByText(`Welcome back, ${username}. We LOVE you!`)
     // ✨ click on the logout button (grab it by its test id)
+    expect(await screen.findByText('Bye! Please, come back soon.')).toBeVisible()
     // ✨ assert that the goodbye message is eventually visible in the DOM
     // ✨ assert that the form is visible in the DOM (select it by its test id)
-    expect(true).toBe(false) // DELETE
+   expect(screen.getByTestId('loginForm')).toBeVisible()
+      
+   screen.debug()
   })
 })
